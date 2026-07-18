@@ -1,0 +1,825 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NHS Previous Service Calculator</title>
+  <style>
+    :root {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #0b0c0c;
+      background: #f3f2f1;
+      --nhs-blue: #005eb8;
+      --nhs-dark-blue: #003f7e;
+      --nhs-light-blue: #e8f1fb;
+      --border: #b1b4b6;
+      --muted: #505a5f;
+      --red: #d4351c;
+      --green: #007f3b;
+      --yellow: #ffdd00;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    body::before { content: ""; display: block; height: 10px; background: var(--nhs-blue); }
+    main { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 28px 0 56px; }
+    button, input { font: inherit; }
+    button {
+      border: 0;
+      background: var(--nhs-blue);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 10px 14px;
+      box-shadow: 0 3px 0 var(--nhs-dark-blue);
+    }
+    button:hover { background: var(--nhs-dark-blue); }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    button.secondary { background: #fff; color: var(--nhs-blue); border: 2px solid var(--nhs-blue); box-shadow: none; }
+    button.secondary:hover { background: var(--nhs-light-blue); }
+    button.remove-button { background: transparent; color: var(--red); box-shadow: none; padding: 4px; text-decoration: underline; }
+    input {
+      width: 100%; min-height: 42px; border: 2px solid #0b0c0c; border-radius: 0;
+      background: #fff; padding: 8px 10px;
+    }
+    input:focus, button:focus { outline: 3px solid var(--yellow); outline-offset: 0; box-shadow: inset 0 0 0 2px #0b0c0c; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { font-size: clamp(32px, 5vw, 40px); line-height: 1.08; margin-bottom: 12px; }
+    h2 { font-size: 25px; line-height: 1.15; margin-bottom: 10px; }
+    h3 { font-size: 20px; margin-bottom: 10px; }
+    label, .field-label { display: block; margin-bottom: 7px; font-weight: 700; }
+    .app-header { display: flex; align-items: center; gap: 16px; margin-bottom: 26px; }
+    .nhs-mark { display: inline-block; padding: 5px 10px 3px; background: var(--nhs-blue); color: #fff; font-size: 29px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
+    .title-block { display: grid; gap: 2px; }
+    .title-block strong { color: var(--nhs-dark-blue); font-size: 25px; line-height: 1.05; }
+    .title-block span, .muted { color: var(--muted); }
+    .app-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 28px; border-bottom: 4px solid var(--nhs-blue); }
+    .app-tab { display: inline-block; padding: 11px 16px; color: var(--nhs-blue); background: #fff; border: 2px solid var(--nhs-blue); border-bottom: 0; font-weight: 700; text-decoration: none; }
+    .app-tab:hover { background: var(--nhs-light-blue); }
+    .app-tab[aria-current="page"] { color: #fff; background: var(--nhs-blue); }
+    .intro { max-width: 800px; margin-bottom: 26px; }
+    .layout { display: grid; gap: 28px; }
+    .panel { background: #fff; border: 1px solid #d8dde0; box-shadow: 0 2px 0 rgba(11, 12, 12, .08); padding: 28px; }
+    .section { padding-bottom: 26px; margin-bottom: 26px; border-bottom: 1px solid var(--border); }
+    .section:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
+    .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .employment-date-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: start; }
+    .employee-name-field { max-width: 560px; }
+    .service-entry-grid { display: grid; grid-template-columns: minmax(240px, 2fr) minmax(150px, 1fr) minmax(150px, 1fr) auto; gap: 18px; align-items: end; }
+    .static-field { display: flex; align-items: center; width: 100%; min-height: 42px; margin: 0; border: 2px solid #0b0c0c; background: #f3f2f1; padding: 8px 10px; font-weight: 700; }
+    .wide { grid-column: 1 / -1; }
+    .hint { color: var(--muted); font-size: 15px; line-height: 1.35; margin: -2px 0 8px; }
+    .error-summary { display: none; border-left: 6px solid var(--red); background: #fef3f2; padding: 14px; margin-bottom: 20px; }
+    .error-summary.show { display: block; }
+    .error-summary p { margin: 0; font-weight: 700; color: #942514; }
+    .input-error { border: 3px solid var(--red); }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .records-actions { margin-top: 22px; }
+    .bank-service-section { margin-top: 30px; padding-top: 28px; border-top: 1px solid var(--border); }
+    .bank-service-section > .hint { margin: 0 0 18px; }
+    .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 18px 0 0; }
+    .summary-card { border-left: 6px solid var(--nhs-blue); background: var(--nhs-light-blue); padding: 18px; min-height: 126px; }
+    .summary-label { display: block; font-weight: 700; margin-bottom: 7px; }
+    .summary-value { display: block; color: var(--nhs-dark-blue); font-size: 27px; font-weight: 700; line-height: 1.15; }
+    .summary-detail { display: block; margin-top: 7px; color: var(--muted); font-size: 14px; line-height: 1.35; }
+    .records-heading { display: flex; justify-content: space-between; align-items: end; gap: 14px; margin-bottom: 12px; }
+    .records-heading h2, .records-heading p { margin-bottom: 0; }
+    .empty-state { border: 2px dashed var(--border); padding: 24px; text-align: center; color: var(--muted); }
+    .record-list { display: grid; gap: 8px; }
+    .record-columns, .record {
+      display: grid;
+      grid-template-columns: minmax(220px, 2fr) minmax(125px, 1fr) minmax(125px, 1fr) minmax(75px, .55fr) minmax(75px, .55fr) 72px;
+      gap: 14px;
+      align-items: center;
+    }
+    .record-columns { padding: 0 14px 7px 20px; color: var(--muted); font-size: 14px; font-weight: 700; }
+    .record { border-left: 6px solid var(--nhs-blue); background: #f8f8f8; padding: 12px 14px; }
+    .record-cell { min-width: 0; }
+    .record-cell.trust { font-weight: 700; overflow-wrap: anywhere; }
+    .record-cell.date { white-space: nowrap; }
+    .record-cell.duration { color: var(--nhs-dark-blue); font-weight: 700; }
+    .record-cell::before { display: none; }
+    .screen-reader-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    @media (max-width: 900px) {
+      .employment-date-grid { grid-template-columns: 1fr; }
+      .service-entry-grid { grid-template-columns: minmax(220px, 2fr) repeat(2, minmax(145px, 1fr)); }
+      .service-entry-grid .actions { grid-column: 1 / -1; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .record-columns { display: none; }
+      .record { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; }
+      .record-cell::before { content: attr(data-label); display: block; margin-bottom: 3px; color: var(--muted); font-size: 13px; font-weight: 700; }
+      .record-cell.trust { grid-column: 1 / -1; }
+    }
+    @media (max-width: 560px) {
+      main { width: min(100% - 24px, 1180px); padding-top: 20px; }
+      .app-header { align-items: flex-start; }
+      .title-block strong { font-size: 21px; }
+      .panel { padding: 20px; }
+      .field-grid, .employment-date-grid, .service-entry-grid, .summary-grid, .record { grid-template-columns: 1fr; }
+      .service-entry-grid .actions, .record-cell.trust { grid-column: auto; }
+    }
+    @media print {
+      body { background: #fff; }
+      body::before, .app-tabs, .intro, #service-form, #bank-service-form, .actions, .remove-button, .error-summary { display: none !important; }
+      main { width: 100%; padding: 0; }
+      .layout { display: block; }
+      .panel { border: 0; box-shadow: none; padding: 0; }
+      .panel + .panel { margin-top: 28px; }
+      .employment-date-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
+      .employment-date-grid > div { min-width: 0; }
+      .employment-date-grid label { min-height: 2.4em; white-space: normal; overflow-wrap: anywhere; }
+      .employment-date-grid > div:nth-child(2) label { padding-top: 1.2em; }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .record-columns, .record { grid-template-columns: minmax(220px, 2fr) minmax(125px, 1fr) minmax(125px, 1fr) minmax(75px, .55fr) minmax(75px, .55fr); }
+      .record-columns { display: grid; }
+      .record-columns > :last-child, .record > :last-child { display: none !important; }
+      .record-cell::before { display: none !important; content: none !important; }
+      .record-cell.trust { grid-column: auto; }
+      .record { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="app-header">
+      <span class="nhs-mark" aria-label="NHS">NHS</span>
+      <div class="title-block">
+        <strong>Previous Service Calculator</strong>
+        <span>Calculate total and continuous NHS service</span>
+      </div>
+    </header>
+
+    <nav class="app-tabs" aria-label="Calculator pages">
+      <a class="app-tab" href="index.html" aria-current="page">Previous service</a>
+      <a class="app-tab" href="career-break.html">Career break/unpaid leave</a>
+    </nav>
+
+    <h1>Previous service</h1>
+    <div class="layout">
+      <section class="panel input-panel" aria-labelledby="details-heading">
+        <div id="error-summary" class="error-summary" role="alert" tabindex="-1"><p id="error-message"></p></div>
+
+        <div class="section">
+          <div class="employee-name-field">
+            <label for="employee-name">Employee Name</label>
+            <input id="employee-name" type="text" autocomplete="name">
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 id="details-heading">Current employment</h2>
+          <div class="employment-date-grid">
+            <div>
+              <label for="substantive-start">Substantive/Fixed Term Contract Start Date</label>
+              <input id="substantive-start" type="date">
+            </div>
+            <div>
+              <label for="trust-start">Latest Hire Date</label>
+              <input id="trust-start" type="date">
+            </div>
+            <div>
+              <label for="previous-incremental-date">Previous Employment Incremental Date</label>
+              <input id="previous-incremental-date" type="date">
+            </div>
+          </div>
+        </div>
+
+        <form id="service-form" class="section" novalidate>
+          <h2>Add previous service</h2>
+          <div class="service-entry-grid">
+            <div>
+              <label for="trust-name">Name of Trust</label>
+              <input id="trust-name" type="text" autocomplete="organization" placeholder="Enter Trust Name" required>
+            </div>
+            <div>
+              <label for="date-from">Date from</label>
+              <input id="date-from" type="date" required>
+            </div>
+            <div>
+              <label for="date-to">Date to</label>
+              <input id="date-to" type="date" required>
+            </div>
+            <div class="actions">
+              <button type="submit">Add service record</button>
+            </div>
+          </div>
+        </form>
+
+        <div class="records-heading">
+          <div>
+            <h2>Previous service records</h2>
+            <p id="record-count" class="muted">0 records</p>
+          </div>
+        </div>
+        <div id="empty-state" class="empty-state">No previous service has been added.</div>
+        <div class="record-columns" aria-hidden="true">
+          <span>Trust</span>
+          <span>Start date</span>
+          <span>End date</span>
+          <span>Years</span>
+          <span>Days</span>
+          <span>Action</span>
+        </div>
+        <div id="record-list" class="record-list"></div>
+
+        <section class="bank-service-section" aria-labelledby="bank-service-heading">
+          <form id="bank-service-form" class="section" novalidate>
+            <h2 id="bank-service-heading">Current Trust bank service to subtract</h2>
+            <p class="hint">Add bank service worked between the Latest Hire Date and Substantive/Fixed Term Contract Start Date.</p>
+            <div class="service-entry-grid">
+              <div>
+                <span class="field-label">Service</span>
+                <p class="static-field">Bank work with current employment</p>
+              </div>
+              <div>
+                <label for="bank-date-from">Date from</label>
+                <input id="bank-date-from" type="date" required>
+              </div>
+              <div>
+                <label for="bank-date-to">Date to</label>
+                <input id="bank-date-to" type="date" required>
+              </div>
+              <div class="actions">
+                <button type="submit">Add bank record</button>
+              </div>
+            </div>
+          </form>
+
+          <div class="records-heading">
+            <div>
+              <h2>Current Trust bank service records</h2>
+              <p id="bank-record-count" class="muted">0 records</p>
+            </div>
+          </div>
+          <div id="bank-empty-state" class="empty-state">No current Trust bank service has been added.</div>
+          <div class="record-columns" aria-hidden="true">
+            <span>Service</span>
+            <span>Start date</span>
+            <span>End date</span>
+            <span>Years</span>
+            <span>Days</span>
+            <span>Action</span>
+          </div>
+          <div id="bank-record-list" class="record-list"></div>
+        </section>
+
+      </section>
+
+      <section class="panel" aria-labelledby="summary-heading">
+        <h2 id="summary-heading">Service summary</h2>
+        <div class="summary-grid" aria-live="polite">
+          <div class="summary-card">
+            <span class="summary-label">Total previous NHS service</span>
+            <span id="total-service" class="summary-value">0 years, 0 days</span>
+            <span id="total-detail" class="summary-detail">No previous service records added</span>
+          </div>
+          <div class="summary-card">
+            <span class="summary-label">CSD 3 Months</span>
+            <span id="three-month-date" class="summary-value">—</span>
+            <span id="three-month-detail" class="summary-detail">Enter the Substantive/Fixed Term Contract Start Date</span>
+          </div>
+          <div class="summary-card">
+            <span class="summary-label">CSD 12 Months</span>
+            <span id="twelve-month-date" class="summary-value">—</span>
+            <span id="twelve-month-detail" class="summary-detail">Enter the Substantive/Fixed Term Contract Start Date</span>
+          </div>
+          <div class="summary-card">
+            <span class="summary-label">Incremental Date</span>
+            <span id="incremental-date" class="summary-value">—</span>
+            <span id="incremental-date-detail" class="summary-detail">Enter the Previous Employment Incremental Date</span>
+          </div>
+        </div>
+
+        <div class="actions records-actions">
+          <button id="clear-all" class="secondary" type="button">Clear all data</button>
+          <button id="print" class="secondary" type="button">Print summary</button>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const STORAGE_KEY = 'nhs-previous-service-calculator-v1';
+      const DAY_MS = 86400000;
+      const state = { records: [], bankRecords: [], employeeName: '', substantiveStart: '', trustStart: '', previousIncrementalDate: '' };
+
+      const elements = {
+        form: document.getElementById('service-form'),
+        trustName: document.getElementById('trust-name'),
+        dateFrom: document.getElementById('date-from'),
+        dateTo: document.getElementById('date-to'),
+        bankForm: document.getElementById('bank-service-form'),
+        bankDateFrom: document.getElementById('bank-date-from'),
+        bankDateTo: document.getElementById('bank-date-to'),
+        employeeName: document.getElementById('employee-name'),
+        substantiveStart: document.getElementById('substantive-start'),
+        trustStart: document.getElementById('trust-start'),
+        previousIncrementalDate: document.getElementById('previous-incremental-date'),
+        errorSummary: document.getElementById('error-summary'),
+        errorMessage: document.getElementById('error-message'),
+        totalService: document.getElementById('total-service'),
+        totalDetail: document.getElementById('total-detail'),
+        threeMonthDate: document.getElementById('three-month-date'),
+        threeMonthDetail: document.getElementById('three-month-detail'),
+        twelveMonthDate: document.getElementById('twelve-month-date'),
+        twelveMonthDetail: document.getElementById('twelve-month-detail'),
+        incrementalDate: document.getElementById('incremental-date'),
+        incrementalDateDetail: document.getElementById('incremental-date-detail'),
+        recordCount: document.getElementById('record-count'),
+        emptyState: document.getElementById('empty-state'),
+        recordList: document.getElementById('record-list'),
+        bankRecordCount: document.getElementById('bank-record-count'),
+        bankEmptyState: document.getElementById('bank-empty-state'),
+        bankRecordList: document.getElementById('bank-record-list'),
+        clearAll: document.getElementById('clear-all'),
+        print: document.getElementById('print')
+      };
+
+      function parseDate(value) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+        const [year, month, day] = value.split('-').map(Number);
+        const date = new Date(Date.UTC(year, month - 1, day));
+        return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day ? date : null;
+      }
+
+      function toISO(date) { return date.toISOString().slice(0, 10); }
+      function addDays(date, days) { return new Date(date.getTime() + (days * DAY_MS)); }
+
+      function addMonths(date, months) {
+        const year = date.getUTCFullYear();
+        const month = date.getUTCMonth() + months;
+        const day = date.getUTCDate();
+        const first = new Date(Date.UTC(year, month, 1));
+        const lastDay = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
+        return new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), Math.min(day, lastDay)));
+      }
+
+      function formatDate(date) {
+        return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(date);
+      }
+
+      function plural(number, word) { return `${number} ${word}${number === 1 ? '' : 's'}`; }
+      function addYears(date, years) {
+        return addMonths(date, years * 12);
+      }
+
+      function calendarServiceDuration(from, to) {
+        const endExclusive = addDays(to, 1);
+        let years = endExclusive.getUTCFullYear() - from.getUTCFullYear();
+        let anniversary = addYears(from, years);
+        if (anniversary > endExclusive) {
+          years -= 1;
+          anniversary = addYears(from, years);
+        }
+        return {
+          years,
+          days: Math.round((endExclusive - anniversary) / DAY_MS)
+        };
+      }
+
+      function serviceDurationFromDays(totalDays, anchorDate) {
+        if (!anchorDate || totalDays <= 0) return { years: 0, days: 0 };
+        let years = 0;
+        let days = totalDays;
+        let serviceYearStart = anchorDate;
+        while (true) {
+          const nextAnniversary = addYears(anchorDate, years + 1);
+          const serviceYearDays = Math.round((nextAnniversary - serviceYearStart) / DAY_MS);
+          if (days < serviceYearDays) break;
+          days -= serviceYearDays;
+          years += 1;
+          serviceYearStart = nextAnniversary;
+        }
+        return { years, days };
+      }
+
+      function formatServiceDuration(duration, isNegative = false) {
+        const sign = isNegative ? '−' : '';
+        const years = duration.years ? `${sign}${plural(duration.years, 'year')}` : '0 years';
+        const days = duration.days ? `${sign}${plural(duration.days, 'day')}` : '0 days';
+        return `${years}, ${days}`;
+      }
+
+      function inclusiveDays(from, to) { return Math.round((to - from) / DAY_MS) + 1; }
+
+      function mergedPreviousIntervals() {
+        const intervals = state.records
+          .map(record => ({ from: parseDate(record.from), to: parseDate(record.to) }))
+          .filter(interval => interval.from && interval.to)
+          .sort((a, b) => a.from - b.from);
+        const merged = [];
+        intervals.forEach(interval => {
+          const last = merged[merged.length - 1];
+          if (!last || interval.from > addDays(last.to, 1)) {
+            merged.push({ ...interval });
+          } else if (interval.to > last.to) {
+            last.to = interval.to;
+          }
+        });
+        return merged;
+      }
+
+      function totalPreviousDays() {
+        return mergedPreviousIntervals().reduce((total, interval) => total + inclusiveDays(interval.from, interval.to), 0);
+      }
+
+      function totalBankDays() {
+        return state.bankRecords.reduce((total, record) => {
+          const from = parseDate(record.from);
+          const to = parseDate(record.to);
+          return from && to ? total + inclusiveDays(from, to) : total;
+        }, 0);
+      }
+
+      function continuousService(limitMonths) {
+        let nextServiceStart = parseDate(state.substantiveStart);
+        if (!nextServiceStart) return null;
+        let earliestLinkedStart = nextServiceStart;
+        let breakDays = 0;
+        const intervals = mergedPreviousIntervals().sort((a, b) => b.to - a.to);
+        for (const interval of intervals) {
+          if (interval.from > nextServiceStart) continue;
+          if (interval.to >= addDays(nextServiceStart, -1)) {
+            if (interval.from < nextServiceStart) {
+              earliestLinkedStart = interval.from;
+              nextServiceStart = interval.from;
+            }
+            continue;
+          }
+          const firstBreakDay = addDays(interval.to, 1);
+          const limitDate = addMonths(firstBreakDay, limitMonths);
+          if (nextServiceStart < limitDate) {
+            breakDays += Math.round((nextServiceStart - interval.to) / DAY_MS) - 1;
+            earliestLinkedStart = interval.from;
+            nextServiceStart = interval.from;
+          } else {
+            break;
+          }
+        }
+        return {
+          date: addDays(earliestLinkedStart, breakDays),
+          earliestLinkedStart,
+          breakDays,
+          hasEarlierService: earliestLinkedStart < parseDate(state.substantiveStart)
+        };
+      }
+
+      function save() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (error) { /* Storage can be unavailable in private mode. */ }
+      }
+
+      function load() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+          if (!saved || !Array.isArray(saved.records)) return;
+          state.records = saved.records.filter(record => record && typeof record.id === 'string' && typeof record.trust === 'string' && parseDate(record.from) && parseDate(record.to));
+          state.bankRecords = Array.isArray(saved.bankRecords)
+            ? saved.bankRecords.filter(record => record && typeof record.id === 'string' && parseDate(record.from) && parseDate(record.to))
+            : [];
+          state.employeeName = typeof saved.employeeName === 'string' ? saved.employeeName : '';
+          const legacyStart = parseDate(saved.currentStart) ? saved.currentStart : '';
+          state.substantiveStart = parseDate(saved.substantiveStart) ? saved.substantiveStart : legacyStart;
+          state.trustStart = parseDate(saved.trustStart) ? saved.trustStart : legacyStart;
+          if (state.substantiveStart && (!state.trustStart || parseDate(state.trustStart) > parseDate(state.substantiveStart))) {
+            state.trustStart = state.substantiveStart;
+          }
+          state.previousIncrementalDate = parseDate(saved.previousIncrementalDate) ? saved.previousIncrementalDate : '';
+        } catch (error) { /* Ignore damaged saved data. */ }
+      }
+
+      function showError(message, fields = []) {
+        elements.errorMessage.textContent = message;
+        elements.errorSummary.classList.add('show');
+        document.querySelectorAll('.input-error').forEach(input => input.classList.remove('input-error'));
+        fields.forEach(field => field.classList.add('input-error'));
+        elements.errorSummary.focus();
+      }
+
+      function clearError() {
+        elements.errorSummary.classList.remove('show');
+        document.querySelectorAll('.input-error').forEach(input => input.classList.remove('input-error'));
+      }
+
+      function createRecordElement(record, recordType) {
+        const article = document.createElement('article');
+        article.className = 'record';
+        const from = parseDate(record.from);
+        const to = parseDate(record.to);
+        const serviceDuration = calendarServiceDuration(from, to);
+
+        const makeCell = (value, label, className = '') => {
+          const cell = document.createElement('span');
+          cell.className = `record-cell ${className}`.trim();
+          cell.dataset.label = label;
+          cell.textContent = value;
+          return cell;
+        };
+
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'remove-button';
+        remove.textContent = 'Remove';
+        remove.setAttribute('aria-label', recordType === 'bank'
+          ? `Remove bank service record from ${formatDate(from)} to ${formatDate(to)}`
+          : `Remove ${record.trust} service record`);
+        remove.addEventListener('click', () => {
+          const collection = recordType === 'bank' ? 'bankRecords' : 'records';
+          state[collection] = state[collection].filter(item => item.id !== record.id);
+          save();
+          render();
+        });
+        const action = document.createElement('span');
+        action.className = 'record-cell';
+        action.dataset.label = 'Action';
+        action.append(remove);
+        const cells = [
+          makeCell(formatDate(from), 'Start date', 'date'),
+          makeCell(formatDate(to), 'End date', 'date'),
+          makeCell(String(serviceDuration.years), 'Years', 'duration'),
+          makeCell(String(serviceDuration.days), 'Days', 'duration'),
+          action
+        ];
+        cells.unshift(recordType === 'bank'
+          ? makeCell('Bank work with current employment', 'Service', 'trust')
+          : makeCell(record.trust, 'Trust', 'trust'));
+        article.append(...cells);
+        return article;
+      }
+
+      function renderRecords() {
+        elements.recordList.replaceChildren();
+        const sorted = [...state.records].sort((a, b) => b.from.localeCompare(a.from));
+        elements.recordCount.textContent = plural(sorted.length, 'record');
+        elements.emptyState.hidden = sorted.length > 0;
+        sorted.forEach(record => elements.recordList.append(createRecordElement(record, 'previous')));
+
+        elements.bankRecordList.replaceChildren();
+        const sortedBankRecords = [...state.bankRecords].sort((a, b) => b.from.localeCompare(a.from));
+        elements.bankRecordCount.textContent = plural(sortedBankRecords.length, 'record');
+        elements.bankEmptyState.hidden = sortedBankRecords.length > 0;
+        sortedBankRecords.forEach(record => elements.bankRecordList.append(createRecordElement(record, 'bank')));
+      }
+
+      function renderIncrementalDate() {
+        const previousIncrementalDate = parseDate(state.previousIncrementalDate);
+        const contractStartDate = parseDate(state.substantiveStart);
+        if (!previousIncrementalDate) {
+          elements.incrementalDate.textContent = '—';
+          elements.incrementalDateDetail.textContent = 'Enter the Previous Employment Incremental Date';
+          return;
+        }
+        if (!contractStartDate) {
+          elements.incrementalDate.textContent = '—';
+          elements.incrementalDateDetail.textContent = 'Enter the Substantive/Fixed Term Contract Start Date';
+          return;
+        }
+        if (contractStartDate > addMonths(previousIncrementalDate, 12)) {
+          elements.incrementalDate.textContent = 'New Incremental Date';
+          elements.incrementalDateDetail.textContent = 'Previous incremental date is more than 12 months before the contract start';
+          return;
+        }
+
+        const latestRecord = [...state.records]
+          .filter(record => parseDate(record.to))
+          .sort((a, b) => b.to.localeCompare(a.to))[0];
+        if (!latestRecord) {
+          elements.incrementalDate.textContent = 'New Incremental Date';
+          elements.incrementalDateDetail.textContent = 'No previous NHS service record';
+          return;
+        }
+
+        const previousEmploymentEnd = parseDate(latestRecord.to);
+        const firstBreakDay = addDays(previousEmploymentEnd, 1);
+        const twelveMonthLimit = addMonths(firstBreakDay, 12);
+        const breakDays = Math.max(0, Math.round((contractStartDate - previousEmploymentEnd) / DAY_MS) - 1);
+        if (contractStartDate > twelveMonthLimit) {
+          elements.incrementalDate.textContent = 'New Incremental Date';
+          elements.incrementalDateDetail.textContent = `${plural(breakDays, 'break day')} exceeds 12 months`;
+          return;
+        }
+
+        elements.incrementalDate.textContent = formatDate(addDays(previousIncrementalDate, breakDays));
+        elements.incrementalDateDetail.textContent = breakDays
+          ? `${plural(breakDays, 'break day')} added to the previous incremental date`
+          : 'No break adjustment required';
+      }
+
+      function renderSummary() {
+        const grossPreviousDays = totalPreviousDays();
+        const bankDays = totalBankDays();
+        const totalDays = grossPreviousDays - bankDays;
+        const previousIntervals = mergedPreviousIntervals();
+        const bankDates = state.bankRecords.map(record => parseDate(record.from)).filter(Boolean).sort((a, b) => a - b);
+        const totalAnchor = totalDays < 0
+          ? (bankDates[0] || parseDate(state.trustStart) || parseDate(state.substantiveStart))
+          : (previousIntervals.length ? previousIntervals[0].from : parseDate(state.substantiveStart));
+        const totalDuration = serviceDurationFromDays(Math.abs(totalDays), totalAnchor);
+        const mergedCount = mergedPreviousIntervals().length;
+        elements.totalService.textContent = formatServiceDuration(totalDuration, totalDays < 0);
+        elements.totalDetail.textContent = state.records.length || state.bankRecords.length
+          ? `${plural(grossPreviousDays, 'previous service day')} minus ${plural(bankDays, 'current Trust bank day')} = ${plural(totalDays, 'day')}${mergedCount < state.records.length ? '; previous-service overlaps merged' : ''}`
+          : 'No previous service records added';
+
+        renderIncrementalDate();
+
+        const currentStart = parseDate(state.substantiveStart);
+        if (!currentStart) {
+          elements.threeMonthDate.textContent = '—';
+          elements.twelveMonthDate.textContent = '—';
+          elements.threeMonthDetail.textContent = 'Enter the Substantive/Fixed Term Contract Start Date';
+          elements.twelveMonthDetail.textContent = 'Enter the Substantive/Fixed Term Contract Start Date';
+          return;
+        }
+        const three = continuousService(3);
+        const twelve = continuousService(12);
+        elements.threeMonthDate.textContent = formatDate(three.date);
+        elements.twelveMonthDate.textContent = formatDate(twelve.date);
+        elements.threeMonthDetail.textContent = three.hasEarlierService
+          ? `${plural(three.breakDays, 'qualifying break day')} excluded; earliest linked service ${formatDate(three.earliestLinkedStart)}`
+          : 'No earlier record is linked by a break under 3 months';
+        elements.twelveMonthDetail.textContent = twelve.hasEarlierService
+          ? `${plural(twelve.breakDays, 'qualifying break day')} excluded; earliest linked service ${formatDate(twelve.earliestLinkedStart)}`
+          : 'No earlier record is linked by a break under 12 months';
+      }
+
+      function updateBankDateLimits() {
+        const minimum = parseDate(state.trustStart) ? state.trustStart : '';
+        const maximum = parseDate(state.substantiveStart) ? state.substantiveStart : '';
+        elements.trustStart.max = maximum;
+        elements.bankDateFrom.min = minimum;
+        elements.bankDateTo.min = minimum;
+        elements.bankDateFrom.max = maximum;
+        elements.bankDateTo.max = maximum;
+      }
+
+      function render() {
+        elements.employeeName.value = state.employeeName;
+        elements.substantiveStart.value = state.substantiveStart;
+        elements.trustStart.value = state.trustStart;
+        elements.previousIncrementalDate.value = state.previousIncrementalDate;
+        updateBankDateLimits();
+        renderRecords();
+        renderSummary();
+      }
+
+      elements.form.addEventListener('submit', event => {
+        event.preventDefault();
+        clearError();
+        const trust = elements.trustName.value.trim();
+        const from = parseDate(elements.dateFrom.value);
+        const to = parseDate(elements.dateTo.value);
+        if (!trust || !from || !to) {
+          const fields = [];
+          if (!trust) fields.push(elements.trustName);
+          if (!from) fields.push(elements.dateFrom);
+          if (!to) fields.push(elements.dateTo);
+          showError('Enter the Trust name, date from and date to.', fields);
+          return;
+        }
+        if (from > to) {
+          showError('The date from must be on or before the date to.', [elements.dateFrom, elements.dateTo]);
+          return;
+        }
+        const overlappingRecord = state.records.find(record => {
+          const existingFrom = parseDate(record.from);
+          const existingTo = parseDate(record.to);
+          return from <= existingTo && to >= existingFrom;
+        });
+        if (overlappingRecord) {
+          showError(`This period overlaps the existing record for ${overlappingRecord.trust} (${formatDate(parseDate(overlappingRecord.from))} to ${formatDate(parseDate(overlappingRecord.to))}).`, [elements.dateFrom, elements.dateTo]);
+          return;
+        }
+        state.records.push({ id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, trust, from: toISO(from), to: toISO(to) });
+        save();
+        elements.form.reset();
+        render();
+        elements.trustName.focus();
+      });
+
+      elements.bankForm.addEventListener('submit', event => {
+        event.preventDefault();
+        clearError();
+        const from = parseDate(elements.bankDateFrom.value);
+        const to = parseDate(elements.bankDateTo.value);
+        const latestHire = parseDate(state.trustStart);
+        const substantiveStart = parseDate(state.substantiveStart);
+        if (!latestHire || !substantiveStart) {
+          const fields = [];
+          if (!latestHire) fields.push(elements.trustStart);
+          if (!substantiveStart) fields.push(elements.substantiveStart);
+          showError('Enter the Latest Hire Date and Substantive/Fixed Term Contract Start Date before adding bank service.', fields);
+          return;
+        }
+        if (latestHire > substantiveStart) {
+          showError('The Latest Hire Date must be on or before the Substantive/Fixed Term Contract Start Date.', [elements.trustStart, elements.substantiveStart]);
+          return;
+        }
+        if (!from || !to) {
+          const fields = [];
+          if (!from) fields.push(elements.bankDateFrom);
+          if (!to) fields.push(elements.bankDateTo);
+          showError('Enter the date from and date to for the bank service.', fields);
+          return;
+        }
+        if (from > to) {
+          showError('The bank service date from must be on or before the date to.', [elements.bankDateFrom, elements.bankDateTo]);
+          return;
+        }
+        if (from < latestHire || to > substantiveStart) {
+          showError(`Bank service must be between ${formatDate(latestHire)} and ${formatDate(substantiveStart)}.`, [elements.bankDateFrom, elements.bankDateTo]);
+          return;
+        }
+        const overlappingRecord = state.bankRecords.find(record => {
+          const existingFrom = parseDate(record.from);
+          const existingTo = parseDate(record.to);
+          return from <= existingTo && to >= existingFrom;
+        });
+        if (overlappingRecord) {
+          showError(`This period overlaps the existing bank record from ${formatDate(parseDate(overlappingRecord.from))} to ${formatDate(parseDate(overlappingRecord.to))}.`, [elements.bankDateFrom, elements.bankDateTo]);
+          return;
+        }
+        state.bankRecords.push({ id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, from: toISO(from), to: toISO(to) });
+        save();
+        elements.bankForm.reset();
+        render();
+        elements.bankDateFrom.focus();
+      });
+
+      elements.substantiveStart.addEventListener('change', () => {
+        state.substantiveStart = elements.substantiveStart.value;
+        const substantiveStart = parseDate(state.substantiveStart);
+        const latestHire = parseDate(state.trustStart);
+        if (substantiveStart && (!latestHire || latestHire > substantiveStart)) {
+          state.trustStart = state.substantiveStart;
+          elements.trustStart.value = state.trustStart;
+        }
+        clearError();
+        save();
+        updateBankDateLimits();
+        renderSummary();
+      });
+
+      elements.trustStart.addEventListener('change', () => {
+        const latestHire = parseDate(elements.trustStart.value);
+        const substantiveStart = parseDate(state.substantiveStart);
+        if (!latestHire && substantiveStart) {
+          state.trustStart = state.substantiveStart;
+          elements.trustStart.value = state.trustStart;
+          clearError();
+          save();
+          updateBankDateLimits();
+          renderSummary();
+          return;
+        }
+        if (latestHire && substantiveStart && latestHire > substantiveStart) {
+          state.trustStart = state.substantiveStart;
+          elements.trustStart.value = state.trustStart;
+          save();
+          updateBankDateLimits();
+          renderSummary();
+          showError('The Latest Hire Date cannot be after the Substantive/Fixed Term Contract Start Date.', [elements.trustStart, elements.substantiveStart]);
+          return;
+        }
+        state.trustStart = elements.trustStart.value;
+        clearError();
+        save();
+        updateBankDateLimits();
+        renderSummary();
+      });
+
+      elements.previousIncrementalDate.addEventListener('change', () => {
+        state.previousIncrementalDate = elements.previousIncrementalDate.value;
+        save();
+        renderSummary();
+      });
+
+      elements.employeeName.addEventListener('input', () => {
+        state.employeeName = elements.employeeName.value;
+        save();
+      });
+
+      elements.clearAll.addEventListener('click', () => {
+        if (!state.records.length && !state.bankRecords.length && !state.employeeName && !state.substantiveStart && !state.trustStart && !state.previousIncrementalDate) return;
+        if (!window.confirm('Clear the current employment details and all previous and bank service records?')) return;
+        state.records = [];
+        state.bankRecords = [];
+        state.employeeName = '';
+        state.substantiveStart = '';
+        state.trustStart = '';
+        state.previousIncrementalDate = '';
+        save();
+        clearError();
+        render();
+      });
+
+      elements.print.addEventListener('click', () => window.print());
+
+      load();
+      render();
+    })();
+  </script>
+</body>
+</html>
