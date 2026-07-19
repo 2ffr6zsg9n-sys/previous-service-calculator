@@ -223,8 +223,8 @@
 
         <section class="bank-service-section" aria-labelledby="bank-service-heading">
           <form id="bank-service-form" class="section" novalidate>
-            <h2 id="bank-service-heading">Current Trust bank service to subtract</h2>
-            <p class="hint">Add bank service worked between the Latest Hire Date and Substantive/Fixed Term Contract Start Date.</p>
+            <h2 id="bank-service-heading">Current Trust bank-only service to subtract</h2>
+            <p class="hint">Add bank-only service worked between the Latest Hire Date and Substantive/Fixed Term Contract Start Date.</p>
             <div class="service-entry-grid">
               <div>
                 <span class="field-label">Service</span>
@@ -246,11 +246,11 @@
 
           <div class="records-heading">
             <div>
-              <h2>Current Trust bank service records</h2>
+              <h2>Current Trust bank-only service records</h2>
               <p id="bank-record-count" class="muted">0 records</p>
             </div>
           </div>
-          <div id="bank-empty-state" class="empty-state">No current Trust bank service has been added.</div>
+          <div id="bank-empty-state" class="empty-state">No current Trust bank-only service has been added.</div>
           <div class="record-columns" aria-hidden="true">
             <span>Service</span>
             <span>Start date</span>
@@ -468,12 +468,12 @@
       }
 
       function save() {
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (error) { /* Storage can be unavailable in private mode. */ }
+        try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (error) { /* Session storage can be unavailable in private mode. */ }
       }
 
       function load() {
         try {
-          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+          const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY));
           if (!saved || !Array.isArray(saved.records)) return;
           state.records = saved.records.filter(record => record && typeof record.id === 'string' && typeof record.trust === 'string' && parseDate(record.from) && parseDate(record.to));
           state.bankRecords = Array.isArray(saved.bankRecords)
@@ -523,7 +523,7 @@
         remove.className = 'remove-button';
         remove.textContent = 'Remove';
         remove.setAttribute('aria-label', recordType === 'bank'
-          ? `Remove bank service record from ${formatDate(from)} to ${formatDate(to)}`
+          ? `Remove bank-only service record from ${formatDate(from)} to ${formatDate(to)}`
           : `Remove ${record.trust} service record`);
         remove.addEventListener('click', () => {
           const collection = recordType === 'bank' ? 'bankRecords' : 'records';
@@ -620,7 +620,7 @@
         const mergedCount = mergedPreviousIntervals().length;
         elements.totalService.textContent = formatServiceDuration(totalDuration, totalDays < 0);
         elements.totalDetail.textContent = state.records.length || state.bankRecords.length
-          ? `${plural(grossPreviousDays, 'previous service day')} minus ${plural(bankDays, 'current Trust bank day')} = ${plural(totalDays, 'day')}${mergedCount < state.records.length ? '; previous-service overlaps merged' : ''}`
+          ? `${plural(grossPreviousDays, 'previous service day')} minus ${plural(bankDays, 'current Trust bank-only service day')} = ${plural(totalDays, 'day')}${mergedCount < state.records.length ? '; previous-service overlaps merged' : ''}`
           : 'No previous service records added';
 
         renderIncrementalDate();
@@ -710,7 +710,7 @@
           const fields = [];
           if (!latestHire) fields.push(elements.trustStart);
           if (!substantiveStart) fields.push(elements.substantiveStart);
-          showError('Enter the Latest Hire Date and Substantive/Fixed Term Contract Start Date before adding bank service.', fields);
+          showError('Enter the Latest Hire Date and Substantive/Fixed Term Contract Start Date before adding bank-only service.', fields);
           return;
         }
         if (latestHire > substantiveStart) {
@@ -721,15 +721,15 @@
           const fields = [];
           if (!from) fields.push(elements.bankDateFrom);
           if (!to) fields.push(elements.bankDateTo);
-          showError('Enter the date from and date to for the bank service.', fields);
+          showError('Enter the date from and date to for the bank-only service.', fields);
           return;
         }
         if (from > to) {
-          showError('The bank service date from must be on or before the date to.', [elements.bankDateFrom, elements.bankDateTo]);
+          showError('The bank-only service date from must be on or before the date to.', [elements.bankDateFrom, elements.bankDateTo]);
           return;
         }
         if (from < latestHire || to > substantiveStart) {
-          showError(`Bank service must be between ${formatDate(latestHire)} and ${formatDate(substantiveStart)}.`, [elements.bankDateFrom, elements.bankDateTo]);
+          showError(`Bank-only service must be between ${formatDate(latestHire)} and ${formatDate(substantiveStart)}.`, [elements.bankDateFrom, elements.bankDateTo]);
           return;
         }
         const overlappingRecord = state.bankRecords.find(record => {
@@ -803,7 +803,7 @@
 
       elements.clearAll.addEventListener('click', () => {
         if (!state.records.length && !state.bankRecords.length && !state.employeeName && !state.substantiveStart && !state.trustStart && !state.previousIncrementalDate) return;
-        if (!window.confirm('Clear the current employment details and all previous and bank service records?')) return;
+        if (!window.confirm('Clear the current employment details and all previous and bank-only service records?')) return;
         state.records = [];
         state.bankRecords = [];
         state.employeeName = '';
@@ -817,6 +817,7 @@
 
       elements.print.addEventListener('click', () => window.print());
 
+      try { localStorage.removeItem(STORAGE_KEY); } catch (error) { /* Remove legacy persistent data when possible. */ }
       load();
       render();
     })();

@@ -348,12 +348,12 @@
       function save() {
         const data = {};
         fieldIds.forEach(id => { data[id] = elements[id].value; });
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (error) { /* Storage can be unavailable. */ }
+        try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (error) { /* Session storage can be unavailable. */ }
       }
 
       function load() {
         try {
-          const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+          const data = JSON.parse(sessionStorage.getItem(STORAGE_KEY));
           if (!data) return;
           fieldIds.forEach(id => { if (typeof data[id] === 'string') elements[id].value = data[id]; });
         } catch (error) { /* Ignore damaged saved data. */ }
@@ -380,12 +380,13 @@
         elements.form.reset();
         clearError();
         resetResults();
-        try { localStorage.removeItem(STORAGE_KEY); } catch (error) { /* Storage can be unavailable. */ }
+        try { sessionStorage.removeItem(STORAGE_KEY); } catch (error) { /* Session storage can be unavailable. */ }
         elements['employee-name'].focus();
       });
 
       elements.printPdf.addEventListener('click', () => window.print());
 
+      try { localStorage.removeItem(STORAGE_KEY); } catch (error) { /* Remove legacy persistent data when possible. */ }
       load();
       calculate(false);
     })();

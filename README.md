@@ -8,9 +8,9 @@ A browser-based tool for calculating previous NHS service, continuous service da
 - Calculate aggregated years and days with leap-year support.
 - Calculate CSD 3 Months and CSD 12 Months.
 - Adjust incremental dates for qualifying breaks.
-- Deduct current Trust bank service.
+- Deduct current Trust bank-only service.
 - Adjust dates and aggregated service after a career break.
-- Save entered data locally in the browser.
+- Retain entered data only for the current browser session, without persistent storage.
 - Print calculation summaries.
 
 ## Use
