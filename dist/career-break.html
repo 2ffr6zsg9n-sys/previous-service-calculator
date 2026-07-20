@@ -75,15 +75,46 @@
       .title-block strong { font-size: 21px; }
       .panel { padding: 20px; }
     }
+    @page { size: A4 portrait; margin: 10mm; }
     @media print {
+      html, body { font-size: 11px; }
       body { background: #fff; }
-      body::before, .app-tabs, .actions, .error-summary { display: none !important; }
+      body::before, .app-tabs, .actions, .error-summary, .intro { display: none !important; }
       main { width: 100%; padding: 0; }
       .panel { border: 0; box-shadow: none; padding: 0; }
-      .panel + .panel { margin-top: 28px; }
-      .date-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-      .service-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 220px)); gap: 14px; }
-      .date-grid > div, .service-grid > div { min-width: 0; }
+      .panel + .panel { margin-top: 12px; }
+      .app-header { gap: 10px; margin-bottom: 10px; }
+      .nhs-mark { font-size: 22px; }
+      .title-block strong { font-size: 18px; }
+      .title-block span { font-size: 11px; }
+      h1 { font-size: 24px; margin-bottom: 10px; }
+      h2 { font-size: 17px; margin-bottom: 6px; }
+      label { margin-bottom: 4px; }
+      input { min-height: 30px; padding: 4px 6px; border-width: 1px; }
+      .section { padding-bottom: 10px; margin-bottom: 10px; }
+      .date-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 10px; }
+      .service-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 190px)) !important; gap: 10px; max-width: none; }
+      .leave-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 220px)) !important; gap: 10px; }
+      .date-grid > div, .service-grid > div, .leave-grid > div { min-width: 0; }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        grid-template-areas:
+          "break break"
+          "csd-three csd-twelve"
+          "incremental aggregate";
+        gap: 6px 10px;
+      }
+      .summary-break { grid-area: break; }
+      .summary-csd-three { grid-area: csd-three; }
+      .summary-csd-twelve { grid-area: csd-twelve; }
+      .summary-incremental { grid-area: incremental; }
+      .summary-aggregate { grid-area: aggregate; }
+      .summary-card, .summary-card.wide { min-height: 0; padding: 8px 10px; border-left-width: 4px; }
+      .summary-card.wide { grid-column: 1 / -1; }
+      .summary-label { margin-bottom: 3px; }
+      .summary-value { font-size: 17px; }
+      .summary-detail { margin-top: 3px; font-size: 10px; }
     }
   </style>
 </head>
@@ -171,27 +202,27 @@
       <section class="panel" aria-labelledby="results-heading">
         <h2 id="results-heading">Adjusted service</h2>
         <div class="summary-grid" aria-live="polite">
-          <div class="summary-card wide">
+          <div class="summary-card wide summary-break">
             <span class="summary-label">Career break</span>
             <span id="leave-days-result" class="summary-value">0 days</span>
             <span id="leave-period-result" class="summary-detail">Enter a date from and date to</span>
           </div>
-          <div class="summary-card">
+          <div class="summary-card summary-incremental">
             <span class="summary-label">Adjusted Incremental Date</span>
             <span id="incremental-result" class="summary-value">—</span>
             <span class="summary-detail">Moved forward by the career-break days</span>
           </div>
-          <div class="summary-card">
+          <div class="summary-card summary-csd-three">
             <span class="summary-label">Adjusted CSD 3 Months</span>
             <span id="csd-three-result" class="summary-value">—</span>
             <span class="summary-detail">Moved forward by the career-break days</span>
           </div>
-          <div class="summary-card">
+          <div class="summary-card summary-csd-twelve">
             <span class="summary-label">Adjusted CSD 12 Months</span>
             <span id="csd-twelve-result" class="summary-value">—</span>
             <span class="summary-detail">Moved forward by the career-break days</span>
           </div>
-          <div class="summary-card">
+          <div class="summary-card summary-aggregate">
             <span class="summary-label">Adjusted Aggregated Service</span>
             <span id="aggregated-result" class="summary-value">—</span>
             <span id="aggregated-detail" class="summary-detail">Career-break days are deducted from service</span>
