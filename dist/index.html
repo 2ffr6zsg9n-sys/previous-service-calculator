@@ -63,6 +63,8 @@
     .section:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
     .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
     .employment-date-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: start; }
+    .latest-hire-input { width: 88%; }
+    .previous-incremental-field { transform: translateX(-18px); }
     .employee-name-field { max-width: 560px; }
     .service-entry-grid { display: grid; grid-template-columns: minmax(240px, 2fr) minmax(150px, 1fr) minmax(150px, 1fr) auto; gap: 18px; align-items: end; }
     .static-field { display: flex; align-items: center; width: 100%; min-height: 42px; margin: 0; border: 2px solid #0b0c0c; background: #f3f2f1; padding: 8px 10px; font-weight: 700; }
@@ -101,6 +103,7 @@
     .screen-reader-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
     @media (max-width: 900px) {
       .employment-date-grid { grid-template-columns: 1fr; }
+      .previous-incremental-field { transform: none; }
       .service-entry-grid { grid-template-columns: minmax(220px, 2fr) repeat(2, minmax(145px, 1fr)); }
       .service-entry-grid .actions { grid-column: 1 / -1; }
       .summary-grid { grid-template-columns: 1fr; }
@@ -116,25 +119,65 @@
       .panel { padding: 20px; }
       .field-grid, .employment-date-grid, .service-entry-grid, .summary-grid, .record { grid-template-columns: 1fr; }
       .service-entry-grid .actions, .record-cell.trust { grid-column: auto; }
+      .latest-hire-input { width: 100%; }
     }
+    @page { size: A4 portrait; margin: 10mm; }
     @media print {
+      html, body { font-size: 11px; }
       body { background: #fff; }
       body::before, .app-tabs, .intro, #service-form, #bank-service-form, .actions, .remove-button, .error-summary { display: none !important; }
       main { width: 100%; padding: 0; }
       .layout { display: block; }
       .panel { border: 0; box-shadow: none; padding: 0; }
-      .panel + .panel { margin-top: 28px; }
-      .employment-date-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
+      .panel + .panel { margin-top: 12px; }
+      .app-header { gap: 10px; margin-bottom: 10px; }
+      .nhs-mark { font-size: 22px; }
+      .title-block strong { font-size: 18px; }
+      .title-block span { font-size: 11px; }
+      h1 { font-size: 24px; margin-bottom: 10px; }
+      h2 { font-size: 17px; margin-bottom: 6px; }
+      label, .field-label { margin-bottom: 4px; }
+      input { min-height: 30px; padding: 4px 6px; border-width: 1px; }
+      .section { padding-bottom: 10px; margin-bottom: 10px; }
+      .employment-date-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: start; }
       .employment-date-grid > div { min-width: 0; }
       .employment-date-grid label { min-height: 2.4em; white-space: normal; overflow-wrap: anywhere; }
       .employment-date-grid > div:nth-child(2) label { padding-top: 1.2em; }
-      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .record-columns, .record { grid-template-columns: minmax(220px, 2fr) minmax(125px, 1fr) minmax(125px, 1fr) minmax(75px, .55fr) minmax(75px, .55fr); }
+      .latest-hire-input { width: 82%; }
+      .previous-incremental-field { transform: translateX(-10px); }
+      .records-heading { margin-bottom: 5px; }
+      .records-heading p { font-size: 10px; }
+      .empty-state { padding: 10px; }
+      .record-list { gap: 4px; }
+      .record-columns, .record { grid-template-columns: minmax(190px, 2fr) minmax(105px, 1fr) minmax(105px, 1fr) minmax(55px, .5fr) minmax(55px, .5fr); gap: 6px; font-size: 10.5px; }
       .record-columns { display: grid; }
+      .record-columns { padding: 0 8px 4px 14px; }
+      .record { padding: 6px 8px; border-left-width: 4px; }
       .record-columns > :last-child, .record > :last-child { display: none !important; }
       .record-cell::before { display: none !important; content: none !important; }
       .record-cell.trust { grid-column: auto; }
       .record { break-inside: avoid; }
+      .bank-service-section { margin-top: 12px; padding-top: 10px; }
+      .bank-service-section.is-empty { display: none !important; }
+      .service-summary-panel { break-inside: avoid; }
+      .service-summary-panel h2 { margin-bottom: 6px; }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-areas:
+          "csd-three incremental"
+          "csd-twelve total";
+        gap: 6px 10px;
+        margin-top: 0;
+      }
+      .summary-csd-three { grid-area: csd-three; }
+      .summary-csd-twelve { grid-area: csd-twelve; }
+      .summary-total { grid-area: total; }
+      .summary-incremental { grid-area: incremental; }
+      .summary-card { min-height: 0; padding: 8px 10px; border-left-width: 4px; }
+      .summary-label { margin-bottom: 3px; }
+      .summary-value { font-size: 17px; }
+      .summary-detail { margin-top: 3px; font-size: 10px; }
     }
   </style>
 </head>
@@ -174,9 +217,9 @@
             </div>
             <div>
               <label for="trust-start">Latest Hire Date</label>
-              <input id="trust-start" type="date">
+              <input id="trust-start" class="latest-hire-input" type="date">
             </div>
-            <div>
+            <div class="previous-incremental-field">
               <label for="previous-incremental-date">Previous Employment Incremental Date</label>
               <input id="previous-incremental-date" type="date">
             </div>
@@ -221,7 +264,7 @@
         </div>
         <div id="record-list" class="record-list"></div>
 
-        <section class="bank-service-section" aria-labelledby="bank-service-heading">
+        <section id="bank-service-section" class="bank-service-section is-empty" aria-labelledby="bank-service-heading">
           <form id="bank-service-form" class="section" novalidate>
             <h2 id="bank-service-heading">Current Trust bank-only service to subtract</h2>
             <p class="hint">Add bank-only service worked between the Latest Hire Date and Substantive/Fixed Term Contract Start Date.</p>
@@ -264,25 +307,25 @@
 
       </section>
 
-      <section class="panel" aria-labelledby="summary-heading">
+      <section class="panel service-summary-panel" aria-labelledby="summary-heading">
         <h2 id="summary-heading">Service summary</h2>
         <div class="summary-grid" aria-live="polite">
-          <div class="summary-card">
-            <span class="summary-label">Total previous NHS service</span>
-            <span id="total-service" class="summary-value">0 years, 0 days</span>
-            <span id="total-detail" class="summary-detail">No previous service records added</span>
-          </div>
-          <div class="summary-card">
+          <div class="summary-card summary-csd-three">
             <span class="summary-label">CSD 3 Months</span>
             <span id="three-month-date" class="summary-value">—</span>
             <span id="three-month-detail" class="summary-detail">Enter the Substantive/Fixed Term Contract Start Date</span>
           </div>
-          <div class="summary-card">
+          <div class="summary-card summary-csd-twelve">
             <span class="summary-label">CSD 12 Months</span>
             <span id="twelve-month-date" class="summary-value">—</span>
             <span id="twelve-month-detail" class="summary-detail">Enter the Substantive/Fixed Term Contract Start Date</span>
           </div>
-          <div class="summary-card">
+          <div class="summary-card summary-total">
+            <span class="summary-label">Total previous NHS service</span>
+            <span id="total-service" class="summary-value">0 years, 0 days</span>
+            <span id="total-detail" class="summary-detail">No previous service records added</span>
+          </div>
+          <div class="summary-card summary-incremental">
             <span class="summary-label">Incremental Date</span>
             <span id="incremental-date" class="summary-value">—</span>
             <span id="incremental-date-detail" class="summary-detail">Enter the Previous Employment Incremental Date</span>
@@ -334,6 +377,7 @@
         bankRecordCount: document.getElementById('bank-record-count'),
         bankEmptyState: document.getElementById('bank-empty-state'),
         bankRecordList: document.getElementById('bank-record-list'),
+        bankServiceSection: document.getElementById('bank-service-section'),
         clearAll: document.getElementById('clear-all'),
         print: document.getElementById('print')
       };
@@ -560,6 +604,7 @@
         const sortedBankRecords = [...state.bankRecords].sort((a, b) => b.from.localeCompare(a.from));
         elements.bankRecordCount.textContent = plural(sortedBankRecords.length, 'record');
         elements.bankEmptyState.hidden = sortedBankRecords.length > 0;
+        elements.bankServiceSection.classList.toggle('is-empty', sortedBankRecords.length === 0);
         sortedBankRecords.forEach(record => elements.bankRecordList.append(createRecordElement(record, 'bank')));
       }
 
