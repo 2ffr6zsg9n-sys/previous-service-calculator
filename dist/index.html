@@ -62,9 +62,8 @@
     .section { padding-bottom: 26px; margin-bottom: 26px; border-bottom: 1px solid var(--border); }
     .section:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
     .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
-    .employment-date-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: start; }
-    .latest-hire-input { width: 88%; }
-    .previous-incremental-field { transform: translateX(-18px); }
+    .employment-date-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: start; }
+    .employment-date-grid label { display: flex; align-items: flex-end; min-height: 2.4em; }
     .employee-name-field { max-width: 560px; }
     .service-entry-grid { display: grid; grid-template-columns: minmax(240px, 2fr) minmax(150px, 1fr) minmax(150px, 1fr) auto; gap: 18px; align-items: end; }
     .static-field { display: flex; align-items: center; width: 100%; min-height: 42px; margin: 0; border: 2px solid #0b0c0c; background: #f3f2f1; padding: 8px 10px; font-weight: 700; }
@@ -74,6 +73,10 @@
     .error-summary.show { display: block; }
     .error-summary p { margin: 0; font-weight: 700; color: #942514; }
     .input-error { border: 3px solid var(--red); }
+    .employment-date-errors { border-left: 6px solid var(--red); background: #fef3f2; padding: 12px 14px; margin: 14px 0 0; color: #942514; }
+    .employment-date-errors p { margin: 0 0 5px; font-weight: 700; }
+    .employment-date-errors ul { margin: 0; padding-left: 22px; }
+    .employment-date-errors li + li { margin-top: 3px; }
     .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
     .records-actions { margin-top: 22px; }
     .bank-service-section { margin-top: 30px; padding-top: 28px; border-top: 1px solid var(--border); }
@@ -103,7 +106,7 @@
     .screen-reader-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
     @media (max-width: 900px) {
       .employment-date-grid { grid-template-columns: 1fr; }
-      .previous-incremental-field { transform: none; }
+      .employment-date-grid label { display: block; min-height: 0; }
       .service-entry-grid { grid-template-columns: minmax(220px, 2fr) repeat(2, minmax(145px, 1fr)); }
       .service-entry-grid .actions { grid-column: 1 / -1; }
       .summary-grid { grid-template-columns: 1fr; }
@@ -119,7 +122,6 @@
       .panel { padding: 20px; }
       .field-grid, .employment-date-grid, .service-entry-grid, .summary-grid, .record { grid-template-columns: 1fr; }
       .service-entry-grid .actions, .record-cell.trust { grid-column: auto; }
-      .latest-hire-input { width: 100%; }
     }
     @page { size: A4 portrait; margin: 10mm; }
     @media print {
@@ -139,12 +141,12 @@
       label, .field-label { margin-bottom: 4px; }
       input { min-height: 30px; padding: 4px 6px; border-width: 1px; }
       .section { padding-bottom: 10px; margin-bottom: 10px; }
-      .employment-date-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: start; }
+      .employment-date-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; align-items: start; }
       .employment-date-grid > div { min-width: 0; }
-      .employment-date-grid label { min-height: 2.4em; white-space: normal; overflow-wrap: anywhere; }
-      .employment-date-grid > div:nth-child(2) label { padding-top: 1.2em; }
-      .latest-hire-input { width: 82%; }
-      .previous-incremental-field { transform: translateX(-10px); }
+      .employment-date-grid label { display: flex; align-items: flex-end; min-height: 3.6em; white-space: normal; overflow-wrap: anywhere; }
+      .employment-date-errors { border-left-width: 4px; padding: 6px 8px; margin-top: 6px; }
+      .employment-date-errors p { margin-bottom: 2px; }
+      .employment-date-errors li + li { margin-top: 1px; }
       .records-heading { margin-bottom: 5px; }
       .records-heading p { font-size: 10px; }
       .empty-state { padding: 10px; }
@@ -213,16 +215,24 @@
           <div class="employment-date-grid">
             <div>
               <label for="substantive-start">Substantive/Fixed Term Contract Start Date</label>
-              <input id="substantive-start" type="date">
+              <input id="substantive-start" type="date" min="1900-01-01" max="2200-12-31" aria-describedby="employment-date-errors">
             </div>
             <div>
               <label for="trust-start">Latest Hire Date</label>
-              <input id="trust-start" class="latest-hire-input" type="date">
+              <input id="trust-start" type="date" min="1900-01-01" max="2200-12-31" aria-describedby="employment-date-errors">
             </div>
-            <div class="previous-incremental-field">
+            <div>
+              <label for="nhs-start">NHS Start Date</label>
+              <input id="nhs-start" type="date" min="1900-01-01" max="2200-12-31" aria-describedby="employment-date-errors">
+            </div>
+            <div>
               <label for="previous-incremental-date">Previous Employment Incremental Date</label>
-              <input id="previous-incremental-date" type="date">
+              <input id="previous-incremental-date" type="date" min="1900-01-01" max="2200-12-31" aria-describedby="employment-date-errors">
             </div>
+          </div>
+          <div id="employment-date-errors" class="employment-date-errors" role="status" aria-live="polite" hidden>
+            <p>Check the employment dates:</p>
+            <ul id="employment-date-error-list"></ul>
           </div>
         </div>
 
@@ -347,7 +357,16 @@
 
       const STORAGE_KEY = 'nhs-previous-service-calculator-v1';
       const DAY_MS = 86400000;
-      const state = { records: [], bankRecords: [], employeeName: '', substantiveStart: '', trustStart: '', previousIncrementalDate: '' };
+      const state = {
+        records: [],
+        bankRecords: [],
+        employeeName: '',
+        substantiveStart: '',
+        trustStart: '',
+        nhsStart: '',
+        previousIncrementalDate: '',
+        latestHireDefaultApplied: false
+      };
 
       const elements = {
         form: document.getElementById('service-form'),
@@ -360,7 +379,10 @@
         employeeName: document.getElementById('employee-name'),
         substantiveStart: document.getElementById('substantive-start'),
         trustStart: document.getElementById('trust-start'),
+        nhsStart: document.getElementById('nhs-start'),
         previousIncrementalDate: document.getElementById('previous-incremental-date'),
+        employmentDateErrors: document.getElementById('employment-date-errors'),
+        employmentDateErrorList: document.getElementById('employment-date-error-list'),
         errorSummary: document.getElementById('error-summary'),
         errorMessage: document.getElementById('error-message'),
         totalService: document.getElementById('total-service'),
@@ -390,6 +412,38 @@
       }
 
       function toISO(date) { return date.toISOString().slice(0, 10); }
+
+      function readDateInputValue(input) {
+        if (Number.isFinite(input.valueAsNumber)) {
+          const date = new Date(input.valueAsNumber);
+          const year = date.getUTCFullYear();
+          if (year >= 1900 && year <= 2200) return toISO(date);
+        }
+        const parsed = parseDate(input.value);
+        return parsed && parsed.getUTCFullYear() >= 1900 && parsed.getUTCFullYear() <= 2200 ? toISO(parsed) : '';
+      }
+
+      function setDateInputValue(input, value) {
+        const parsed = parseDate(value);
+        if (!parsed) {
+          input.value = '';
+          return;
+        }
+        const normalized = toISO(parsed);
+        try {
+          input.valueAsNumber = parsed.getTime();
+        } catch (error) {
+          input.value = normalized;
+        }
+        if (input.value !== normalized) input.value = normalized;
+      }
+
+      function normalizeEmploymentDate(value) {
+        const parsed = parseDate(value);
+        const year = parsed ? parsed.getUTCFullYear() : 0;
+        return parsed && year >= 1900 && year <= 2200 ? toISO(parsed) : '';
+      }
+
       function addDays(date, days) { return new Date(date.getTime() + (days * DAY_MS)); }
 
       function addMonths(date, months) {
@@ -524,13 +578,14 @@
             ? saved.bankRecords.filter(record => record && typeof record.id === 'string' && parseDate(record.from) && parseDate(record.to))
             : [];
           state.employeeName = typeof saved.employeeName === 'string' ? saved.employeeName : '';
-          const legacyStart = parseDate(saved.currentStart) ? saved.currentStart : '';
-          state.substantiveStart = parseDate(saved.substantiveStart) ? saved.substantiveStart : legacyStart;
-          state.trustStart = parseDate(saved.trustStart) ? saved.trustStart : legacyStart;
-          if (state.substantiveStart && (!state.trustStart || parseDate(state.trustStart) > parseDate(state.substantiveStart))) {
-            state.trustStart = state.substantiveStart;
-          }
-          state.previousIncrementalDate = parseDate(saved.previousIncrementalDate) ? saved.previousIncrementalDate : '';
+          const legacyStart = normalizeEmploymentDate(saved.currentStart);
+          state.substantiveStart = normalizeEmploymentDate(saved.substantiveStart) || legacyStart;
+          state.trustStart = normalizeEmploymentDate(saved.trustStart) || legacyStart;
+          state.nhsStart = normalizeEmploymentDate(saved.nhsStart);
+          state.previousIncrementalDate = normalizeEmploymentDate(saved.previousIncrementalDate);
+          state.latestHireDefaultApplied = typeof saved.latestHireDefaultApplied === 'boolean'
+            ? saved.latestHireDefaultApplied
+            : Boolean(state.substantiveStart);
         } catch (error) { /* Ignore damaged saved data. */ }
       }
 
@@ -693,19 +748,49 @@
       function updateBankDateLimits() {
         const minimum = parseDate(state.trustStart) ? state.trustStart : '';
         const maximum = parseDate(state.substantiveStart) ? state.substantiveStart : '';
-        elements.trustStart.max = maximum;
+        elements.trustStart.max = '2200-12-31';
         elements.bankDateFrom.min = minimum;
         elements.bankDateTo.min = minimum;
         elements.bankDateFrom.max = maximum;
         elements.bankDateTo.max = maximum;
       }
 
+      function renderEmploymentDateErrors() {
+        const substantiveStart = parseDate(state.substantiveStart);
+        const latestHire = parseDate(state.trustStart);
+        const nhsStart = parseDate(state.nhsStart);
+        const previousIncrementalDate = parseDate(state.previousIncrementalDate);
+        const messages = [];
+
+        if (nhsStart && latestHire && nhsStart > latestHire) {
+          messages.push('NHS Start Date is after Latest Hire Date.');
+        }
+        if (nhsStart && substantiveStart && nhsStart > substantiveStart) {
+          messages.push('NHS Start Date is after Substantive/Fixed Term Contract Start Date.');
+        }
+        if (nhsStart && previousIncrementalDate && nhsStart > previousIncrementalDate) {
+          messages.push('NHS Start Date is after Previous Employment Incremental Date.');
+        }
+        if (substantiveStart && latestHire && latestHire > substantiveStart) {
+          messages.push('Latest Hire Date is after Substantive/Fixed Term Contract Start Date.');
+        }
+
+        elements.employmentDateErrorList.replaceChildren(...messages.map(message => {
+          const item = document.createElement('li');
+          item.textContent = message;
+          return item;
+        }));
+        elements.employmentDateErrors.hidden = messages.length === 0;
+      }
+
       function render() {
         elements.employeeName.value = state.employeeName;
-        elements.substantiveStart.value = state.substantiveStart;
-        elements.trustStart.value = state.trustStart;
-        elements.previousIncrementalDate.value = state.previousIncrementalDate;
+        setDateInputValue(elements.substantiveStart, state.substantiveStart);
+        setDateInputValue(elements.trustStart, state.trustStart);
+        setDateInputValue(elements.nhsStart, state.nhsStart);
+        setDateInputValue(elements.previousIncrementalDate, state.previousIncrementalDate);
         updateBankDateLimits();
+        renderEmploymentDateErrors();
         renderRecords();
         renderSummary();
       }
@@ -793,53 +878,54 @@
         elements.bankDateFrom.focus();
       });
 
-      elements.substantiveStart.addEventListener('change', () => {
-        state.substantiveStart = elements.substantiveStart.value;
+      function commitSubstantiveStart(finalize = false) {
+        const enteredStart = readDateInputValue(elements.substantiveStart);
+        if (!enteredStart && !finalize) return;
+        state.substantiveStart = enteredStart;
         const substantiveStart = parseDate(state.substantiveStart);
-        const latestHire = parseDate(state.trustStart);
-        if (substantiveStart && (!latestHire || latestHire > substantiveStart)) {
-          state.trustStart = state.substantiveStart;
-          elements.trustStart.value = state.trustStart;
+        if (substantiveStart && !state.latestHireDefaultApplied) {
+          if (!parseDate(state.trustStart)) {
+            state.trustStart = state.substantiveStart;
+            setDateInputValue(elements.trustStart, state.trustStart);
+          }
+          state.latestHireDefaultApplied = true;
         }
         clearError();
         save();
         updateBankDateLimits();
+        renderEmploymentDateErrors();
         renderSummary();
-      });
+      }
 
-      elements.trustStart.addEventListener('change', () => {
-        const latestHire = parseDate(elements.trustStart.value);
-        const substantiveStart = parseDate(state.substantiveStart);
-        if (!latestHire && substantiveStart) {
-          state.trustStart = state.substantiveStart;
-          elements.trustStart.value = state.trustStart;
-          clearError();
-          save();
-          updateBankDateLimits();
-          renderSummary();
-          return;
-        }
-        if (latestHire && substantiveStart && latestHire > substantiveStart) {
-          state.trustStart = state.substantiveStart;
-          elements.trustStart.value = state.trustStart;
-          save();
-          updateBankDateLimits();
-          renderSummary();
-          showError('The Latest Hire Date cannot be after the Substantive/Fixed Term Contract Start Date.', [elements.trustStart, elements.substantiveStart]);
-          return;
-        }
-        state.trustStart = elements.trustStart.value;
+      function commitLatestHireDate(finalize = false) {
+        const enteredLatestHire = readDateInputValue(elements.trustStart);
+        const latestHire = parseDate(enteredLatestHire);
+        if (!latestHire && !finalize) return;
+        state.trustStart = enteredLatestHire;
         clearError();
         save();
         updateBankDateLimits();
+        renderEmploymentDateErrors();
         renderSummary();
-      });
+      }
 
-      elements.previousIncrementalDate.addEventListener('change', () => {
-        state.previousIncrementalDate = elements.previousIncrementalDate.value;
+      function commitOptionalDate(input, stateKey, finalize = false, updateSummary = false) {
+        const enteredDate = readDateInputValue(input);
+        if (!enteredDate && !finalize) return;
+        state[stateKey] = enteredDate;
         save();
-        renderSummary();
-      });
+        renderEmploymentDateErrors();
+        if (updateSummary) renderSummary();
+      }
+
+      elements.substantiveStart.addEventListener('change', () => commitSubstantiveStart());
+      elements.substantiveStart.addEventListener('blur', () => commitSubstantiveStart(true));
+      elements.trustStart.addEventListener('change', () => commitLatestHireDate());
+      elements.trustStart.addEventListener('blur', () => commitLatestHireDate(true));
+      elements.nhsStart.addEventListener('change', () => commitOptionalDate(elements.nhsStart, 'nhsStart'));
+      elements.nhsStart.addEventListener('blur', () => commitOptionalDate(elements.nhsStart, 'nhsStart', true));
+      elements.previousIncrementalDate.addEventListener('change', () => commitOptionalDate(elements.previousIncrementalDate, 'previousIncrementalDate', false, true));
+      elements.previousIncrementalDate.addEventListener('blur', () => commitOptionalDate(elements.previousIncrementalDate, 'previousIncrementalDate', true, true));
 
       elements.employeeName.addEventListener('input', () => {
         state.employeeName = elements.employeeName.value;
@@ -847,14 +933,16 @@
       });
 
       elements.clearAll.addEventListener('click', () => {
-        if (!state.records.length && !state.bankRecords.length && !state.employeeName && !state.substantiveStart && !state.trustStart && !state.previousIncrementalDate) return;
+        if (!state.records.length && !state.bankRecords.length && !state.employeeName && !state.substantiveStart && !state.trustStart && !state.nhsStart && !state.previousIncrementalDate && !state.latestHireDefaultApplied) return;
         if (!window.confirm('Clear the current employment details and all previous and bank-only service records?')) return;
         state.records = [];
         state.bankRecords = [];
         state.employeeName = '';
         state.substantiveStart = '';
         state.trustStart = '';
+        state.nhsStart = '';
         state.previousIncrementalDate = '';
+        state.latestHireDefaultApplied = false;
         save();
         clearError();
         render();
