@@ -920,7 +920,9 @@
 
       elements.substantiveStart.addEventListener('change', () => commitSubstantiveStart());
       elements.substantiveStart.addEventListener('blur', () => commitSubstantiveStart(true));
-      elements.trustStart.addEventListener('change', () => commitLatestHireDate());
+      elements.trustStart.addEventListener('change', () => {
+        if (document.activeElement !== elements.trustStart) commitLatestHireDate(true);
+      });
       elements.trustStart.addEventListener('blur', () => commitLatestHireDate(true));
       elements.nhsStart.addEventListener('change', () => commitOptionalDate(elements.nhsStart, 'nhsStart'));
       elements.nhsStart.addEventListener('blur', () => commitOptionalDate(elements.nhsStart, 'nhsStart', true));
