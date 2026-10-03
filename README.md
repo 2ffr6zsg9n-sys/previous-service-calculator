@@ -6,7 +6,7 @@ A browser-based tool for calculating previous NHS service, continuous service da
 
 - Record multiple previous NHS employment periods.
 - Calculate aggregated years and days with leap-year support.
-- Calculate CSD 3 Months and CSD 12 Months.
+- Calculate CSD 1 Week, CSD 3 Months and CSD 12 Months. Breaks must be shorter than the selected limit (fewer than seven days for CSD 1 Week).
 - Adjust incremental dates for qualifying breaks.
 - Deduct current Trust bank-only service.
 - Adjust dates and aggregated service after a career break.

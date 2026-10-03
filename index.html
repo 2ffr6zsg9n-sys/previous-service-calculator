@@ -167,11 +167,13 @@
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         grid-template-areas:
-          "csd-three incremental"
-          "csd-twelve total";
+          "csd-one incremental"
+          "csd-three total"
+          "csd-twelve .";
         gap: 6px 10px;
         margin-top: 0;
       }
+      .summary-csd-one { grid-area: csd-one; }
       .summary-csd-three { grid-area: csd-three; }
       .summary-csd-twelve { grid-area: csd-twelve; }
       .summary-total { grid-area: total; }
@@ -320,6 +322,11 @@
       <section class="panel service-summary-panel" aria-labelledby="summary-heading">
         <h2 id="summary-heading">Service summary</h2>
         <div class="summary-grid" aria-live="polite">
+          <div class="summary-card summary-csd-one">
+            <span class="summary-label">CSD 1 Week</span>
+            <span id="one-week-date" class="summary-value">—</span>
+            <span id="one-week-detail" class="summary-detail">Enter the Substantive/Fixed Term Contract Start Date</span>
+          </div>
           <div class="summary-card summary-csd-three">
             <span class="summary-label">CSD 3 Months</span>
             <span id="three-month-date" class="summary-value">—</span>
@@ -387,6 +394,8 @@
         errorMessage: document.getElementById('error-message'),
         totalService: document.getElementById('total-service'),
         totalDetail: document.getElementById('total-detail'),
+        oneWeekDate: document.getElementById('one-week-date'),
+        oneWeekDetail: document.getElementById('one-week-detail'),
         threeMonthDate: document.getElementById('three-month-date'),
         threeMonthDetail: document.getElementById('three-month-detail'),
         twelveMonthDate: document.getElementById('twelve-month-date'),
@@ -532,7 +541,7 @@
         }, 0);
       }
 
-      function continuousService(limitMonths) {
+      function continuousService(limitMonths, limitDays = null) {
         let nextServiceStart = parseDate(state.substantiveStart);
         if (!nextServiceStart) return null;
         let earliestLinkedStart = nextServiceStart;
@@ -548,7 +557,7 @@
             continue;
           }
           const firstBreakDay = addDays(interval.to, 1);
-          const limitDate = addMonths(firstBreakDay, limitMonths);
+          const limitDate = limitDays === null ? addMonths(firstBreakDay, limitMonths) : addDays(firstBreakDay, limitDays);
           if (nextServiceStart < limitDate) {
             breakDays += Math.round((nextServiceStart - interval.to) / DAY_MS) - 1;
             earliestLinkedStart = interval.from;
@@ -727,12 +736,19 @@
 
         const currentStart = parseDate(state.substantiveStart);
         if (!currentStart) {
+          elements.oneWeekDate.textContent = '—';
+          elements.oneWeekDetail.textContent = 'Enter the Substantive/Fixed Term Contract Start Date';
           elements.threeMonthDate.textContent = '—';
           elements.twelveMonthDate.textContent = '—';
           elements.threeMonthDetail.textContent = 'Enter the Substantive/Fixed Term Contract Start Date';
           elements.twelveMonthDetail.textContent = 'Enter the Substantive/Fixed Term Contract Start Date';
           return;
         }
+        const one = continuousService(null, 7);
+        elements.oneWeekDate.textContent = formatDate(one.date);
+        elements.oneWeekDetail.textContent = one.hasEarlierService
+          ? `${plural(one.breakDays, 'qualifying break day')} excluded; earliest linked service ${formatDate(one.earliestLinkedStart)}`
+          : 'No earlier record is linked by a break under 1 week';
         const three = continuousService(3);
         const twelve = continuousService(12);
         elements.threeMonthDate.textContent = formatDate(three.date);

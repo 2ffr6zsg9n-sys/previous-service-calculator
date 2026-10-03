@@ -101,11 +101,13 @@
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         grid-template-areas:
           "break break"
-          "csd-three csd-twelve"
-          "incremental aggregate";
+          "csd-one csd-three"
+          "csd-twelve incremental"
+          "aggregate aggregate";
         gap: 6px 10px;
       }
       .summary-break { grid-area: break; }
+      .summary-csd-one { grid-area: csd-one; }
       .summary-csd-three { grid-area: csd-three; }
       .summary-csd-twelve { grid-area: csd-twelve; }
       .summary-incremental { grid-area: incremental; }
@@ -149,32 +151,38 @@
 
         <section class="section" aria-labelledby="dates-heading">
           <h2 id="dates-heading">Dates before the career break</h2>
+          <p class="intro">These four dates are optional. Leave any unknown date blank.</p>
           <div class="date-grid">
             <div>
               <label for="incremental-date">Incremental Date</label>
-              <input id="incremental-date" type="date" required>
+              <input id="incremental-date" type="date">
+            </div>
+            <div>
+              <label for="csd-one-date">CSD 1 Week</label>
+              <input id="csd-one-date" type="date">
             </div>
             <div>
               <label for="csd-three-date">CSD 3 Months</label>
-              <input id="csd-three-date" type="date" required>
+              <input id="csd-three-date" type="date">
             </div>
             <div>
               <label for="csd-twelve-date">CSD 12 Months</label>
-              <input id="csd-twelve-date" type="date" required>
+              <input id="csd-twelve-date" type="date">
             </div>
           </div>
         </section>
 
         <section class="section" aria-labelledby="service-heading">
           <h2 id="service-heading">Aggregated service before the career break</h2>
+          <p class="intro">Years and days are optional. If only one is entered, the blank field counts as zero.</p>
           <div class="service-grid">
             <div>
               <label for="aggregated-years">Years</label>
-              <input id="aggregated-years" type="number" step="1" required>
+              <input id="aggregated-years" type="number" step="1">
             </div>
             <div>
               <label for="aggregated-days">Days</label>
-              <input id="aggregated-days" type="number" step="1" required>
+              <input id="aggregated-days" type="number" step="1">
             </div>
           </div>
         </section>
@@ -212,6 +220,11 @@
             <span id="incremental-result" class="summary-value">—</span>
             <span class="summary-detail">Moved forward by the career-break days</span>
           </div>
+          <div class="summary-card summary-csd-one">
+            <span class="summary-label">Adjusted CSD 1 Week</span>
+            <span id="csd-one-result" class="summary-value">—</span>
+            <span class="summary-detail">Moved forward by the career-break days</span>
+          </div>
           <div class="summary-card summary-csd-three">
             <span class="summary-label">Adjusted CSD 3 Months</span>
             <span id="csd-three-result" class="summary-value">—</span>
@@ -238,7 +251,7 @@
 
       const STORAGE_KEY = 'nhs-career-break-calculator-v1';
       const DAY_MS = 86400000;
-      const fieldIds = ['employee-name', 'incremental-date', 'csd-three-date', 'csd-twelve-date', 'aggregated-years', 'aggregated-days', 'leave-from', 'leave-to'];
+      const fieldIds = ['employee-name', 'incremental-date', 'csd-one-date', 'csd-three-date', 'csd-twelve-date', 'aggregated-years', 'aggregated-days', 'leave-from', 'leave-to'];
       const elements = {
         form: document.getElementById('career-break-form'),
         errorSummary: document.getElementById('error-summary'),
@@ -248,6 +261,7 @@
         leaveDaysResult: document.getElementById('leave-days-result'),
         leavePeriodResult: document.getElementById('leave-period-result'),
         incrementalResult: document.getElementById('incremental-result'),
+        csdOneResult: document.getElementById('csd-one-result'),
         csdThreeResult: document.getElementById('csd-three-result'),
         csdTwelveResult: document.getElementById('csd-twelve-result'),
         aggregatedResult: document.getElementById('aggregated-result'),
@@ -278,11 +292,13 @@
       }
 
       function serviceDaysForDuration(years, days, anchorDate) {
+        if (!anchorDate) return years * 365 + days;
         const anniversary = addYears(anchorDate, years);
         return Math.round((anniversary - anchorDate) / DAY_MS) + days;
       }
 
       function serviceDurationFromDays(totalDays, anchorDate) {
+        if (!anchorDate) return { years: Math.floor(Math.abs(totalDays) / 365), days: Math.abs(totalDays) % 365, negative: totalDays < 0 };
         let years = 0;
         let days = Math.abs(totalDays);
         if (totalDays < 0) {
@@ -332,6 +348,7 @@
       function readValues() {
         return {
           incrementalDate: parseDate(elements['incremental-date'].value),
+          csdOneDate: parseDate(elements['csd-one-date'].value),
           csdThreeDate: parseDate(elements['csd-three-date'].value),
           csdTwelveDate: parseDate(elements['csd-twelve-date'].value),
           years: Number(elements['aggregated-years'].value),
@@ -344,15 +361,16 @@
       function calculate(showErrors = true) {
         const values = readValues();
         const invalidFields = [];
-        if (!values.incrementalDate) invalidFields.push(elements['incremental-date']);
-        if (!values.csdThreeDate) invalidFields.push(elements['csd-three-date']);
-        if (!values.csdTwelveDate) invalidFields.push(elements['csd-twelve-date']);
-        if (elements['aggregated-years'].value.trim() === '' || !Number.isInteger(values.years)) invalidFields.push(elements['aggregated-years']);
-        if (elements['aggregated-days'].value.trim() === '' || !Number.isInteger(values.days)) invalidFields.push(elements['aggregated-days']);
+        if (elements['incremental-date'].value.trim() && !values.incrementalDate) invalidFields.push(elements['incremental-date']);
+        if (elements['csd-one-date'].value.trim() && !values.csdOneDate) invalidFields.push(elements['csd-one-date']);
+        if (elements['csd-three-date'].value.trim() && !values.csdThreeDate) invalidFields.push(elements['csd-three-date']);
+        if (elements['csd-twelve-date'].value.trim() && !values.csdTwelveDate) invalidFields.push(elements['csd-twelve-date']);
+        if (elements['aggregated-years'].value.trim() !== '' && !Number.isInteger(values.years)) invalidFields.push(elements['aggregated-years']);
+        if (elements['aggregated-days'].value.trim() !== '' && !Number.isInteger(values.days)) invalidFields.push(elements['aggregated-days']);
         if (!values.leaveFrom) invalidFields.push(elements['leave-from']);
         if (!values.leaveTo) invalidFields.push(elements['leave-to']);
         if (invalidFields.length) {
-          if (showErrors) showError('Complete all dates and enter whole-number aggregated years and days. Negative values are allowed.', invalidFields);
+          if (showErrors) showError('Complete the career break dates, check any service dates entered, and use whole numbers for any aggregated years and days entered. Negative values are allowed.', invalidFields);
           return false;
         }
         if (values.leaveFrom > values.leaveTo) {
@@ -362,17 +380,19 @@
 
         clearError();
         const leaveDays = Math.round((values.leaveTo - values.leaveFrom) / DAY_MS) + 1;
+        const hasAggregatedService = elements['aggregated-years'].value.trim() !== '' || elements['aggregated-days'].value.trim() !== '';
         const originalServiceDays = serviceDaysForDuration(values.years, values.days, values.csdTwelveDate);
         const adjustedServiceDays = originalServiceDays - leaveDays;
         const adjustedDuration = serviceDurationFromDays(adjustedServiceDays, values.csdTwelveDate);
 
         elements.leaveDaysResult.textContent = plural(leaveDays, 'day');
         elements.leavePeriodResult.textContent = `${formatDate(values.leaveFrom)} to ${formatDate(values.leaveTo)}, inclusive`;
-        elements.incrementalResult.textContent = formatDate(addDays(values.incrementalDate, leaveDays));
-        elements.csdThreeResult.textContent = formatDate(addDays(values.csdThreeDate, leaveDays));
-        elements.csdTwelveResult.textContent = formatDate(addDays(values.csdTwelveDate, leaveDays));
-        elements.aggregatedResult.textContent = formatServiceDuration(adjustedDuration);
-        elements.aggregatedDetail.textContent = `${plural(leaveDays, 'career-break day')} deducted from ${plural(originalServiceDays, 'service day')}`;
+        elements.incrementalResult.textContent = values.incrementalDate ? formatDate(addDays(values.incrementalDate, leaveDays)) : '—';
+        elements.csdOneResult.textContent = values.csdOneDate ? formatDate(addDays(values.csdOneDate, leaveDays)) : '—';
+        elements.csdThreeResult.textContent = values.csdThreeDate ? formatDate(addDays(values.csdThreeDate, leaveDays)) : '—';
+        elements.csdTwelveResult.textContent = values.csdTwelveDate ? formatDate(addDays(values.csdTwelveDate, leaveDays)) : '—';
+        elements.aggregatedResult.textContent = hasAggregatedService ? formatServiceDuration(adjustedDuration) : '—';
+        elements.aggregatedDetail.textContent = hasAggregatedService ? `${plural(leaveDays, 'career-break day')} deducted from ${plural(originalServiceDays, 'service day')}${values.csdTwelveDate ? '' : '; 365-day years used because CSD 12 Months is blank'}` : 'No aggregated service entered';
         return true;
       }
 
@@ -394,6 +414,7 @@
         elements.leaveDaysResult.textContent = '0 days';
         elements.leavePeriodResult.textContent = 'Enter a date from and date to';
         elements.incrementalResult.textContent = '—';
+        elements.csdOneResult.textContent = '—';
         elements.csdThreeResult.textContent = '—';
         elements.csdTwelveResult.textContent = '—';
         elements.aggregatedResult.textContent = '—';
